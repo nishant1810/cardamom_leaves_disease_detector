@@ -1,0 +1,3 @@
+Healthy
+Leaf_Blight
+Leaf_Spot
