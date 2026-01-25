@@ -14,32 +14,45 @@ class Classifier {
 
   Interpreter? _interpreter;
   late List<String> _labels;
+  late bool _isQuantizedInput;
+  late bool _isQuantizedOutput;
 
+  // =========================
+  // LOAD MODEL
+  // =========================
   Future<void> loadModel() async {
     _interpreter = await Interpreter.fromAsset(modelPath);
     _labels = await _loadLabels();
 
+    _isQuantizedInput =
+        _interpreter!.getInputTensor(0).type.toString().contains('uint8');
+    _isQuantizedOutput =
+        _interpreter!.getOutputTensor(0).type.toString().contains('uint8');
+
     debugPrint('Model loaded');
+    debugPrint('Quantized input: $_isQuantizedInput');
+    debugPrint('Quantized output: $_isQuantizedOutput');
     debugPrint(
         'Input shape: ${_interpreter!.getInputTensor(0).shape}');
     debugPrint(
         'Output shape: ${_interpreter!.getOutputTensor(0).shape}');
-    debugPrint('LABELS LOADED: $_labels');
-    debugPrint('LABEL COUNT: ${_labels.length}');
+    debugPrint('Labels: $_labels');
   }
 
   Future<List<String>> _loadLabels() async {
     final raw = await rootBundle.loadString(labelsPath);
-
     return raw
-        .replaceAll('\r', '')          // remove Windows CR
-        .replaceAll('\uFEFF', '')      // remove BOM if present
+        .replaceAll('\r', '')
+        .replaceAll('\uFEFF', '')
         .split('\n')
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
   }
 
+  // =========================
+  // PREDICT
+  // =========================
   Future<Map<String, dynamic>> predict(File imageFile) async {
     if (_interpreter == null) {
       throw Exception('Interpreter not initialized');
@@ -54,54 +67,73 @@ class Classifier {
     final resized =
     img.copyResize(image, width: inputSize, height: inputSize);
 
-    // 1️⃣ Input preprocessing
-    final input = _imageToFloat32(resized);
-    final input4D = input.reshape([1, inputSize, inputSize, 3]);
+    // ---------- INPUT ----------
+    final Object input = _isQuantizedInput
+        ? _imageToUint8(resized).reshape([1, inputSize, inputSize, 3])
+        : _imageToFloat32(resized).reshape([1, inputSize, inputSize, 3]);
 
-    // 2️⃣ Output buffer from model shape (CRITICAL FIX)
+    // ---------- OUTPUT ----------
     final outputTensor = _interpreter!.getOutputTensor(0);
     final outputShape = outputTensor.shape;
     final outputSize = outputShape.reduce((a, b) => a * b);
 
-    final output =
-    List.filled(outputSize, 0.0).reshape(outputShape);
+    final Object output = _isQuantizedOutput
+        ? Uint8List(outputSize).reshape(outputShape)
+        : List.filled(outputSize, 0.0).reshape(outputShape);
 
-    // 3️⃣ Run inference
-    _interpreter!.run(input4D, output);
+    _interpreter!.run(input, output);
 
-    final scores = List<double>.from(output[0]);
+    // ---------- POST PROCESS ----------
+    List<double> scores;
 
-    // 4️⃣ Safety check
+    if (_isQuantizedOutput) {
+      final scale = outputTensor.params.scale;
+      final zeroPoint = outputTensor.params.zeroPoint;
+
+      scores = (output as List)[0]
+          .map<double>((e) => (e - zeroPoint) * scale)
+          .toList();
+    } else {
+      scores = List<double>.from((output as List)[0]);
+    }
+
     if (scores.length != _labels.length) {
       throw Exception(
         'Model outputs ${scores.length} values but labels.txt has ${_labels.length}',
       );
     }
 
-    // 5️⃣ Softmax + best label
-    final probs = _softmax(scores);
-
-    int bestIdx = 0;
-    double bestScore = probs[0];
-    for (int i = 1; i < probs.length; i++) {
-      if (probs[i] > bestScore) {
-        bestScore = probs[i];
-        bestIdx = i;
-      }
+    if (!_isProbability(scores)) {
+      scores = _softmax(scores);
     }
 
+    // ---------- TOP-2 LOGIC ----------
+    final indexed = scores.asMap().entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final top2 = indexed.take(2).map((e) {
+      return {
+        'label': _labels[e.key],
+        'confidence': e.value,
+      };
+    }).toList();
+
+    final best = top2.first;
+
     return {
-      'label': _labels[bestIdx],
-      'confidence': bestScore,
-      'all_results': Map.fromIterables(_labels, probs),
+      'label': best['label'],
+      'confidence': best['confidence'],
+      'top2': top2,
+      'all_results': Map.fromIterables(_labels, scores),
     };
   }
 
-  /// ✅ RETURNS FLAT Float32List (NO reshape here)
+  // =========================
+  // HELPERS
+  // =========================
   Float32List _imageToFloat32(img.Image image) {
     final buffer = Float32List(inputSize * inputSize * 3);
     int index = 0;
-
     for (int y = 0; y < inputSize; y++) {
       for (int x = 0; x < inputSize; x++) {
         final p = image.getPixel(x, y);
@@ -111,6 +143,25 @@ class Classifier {
       }
     }
     return buffer;
+  }
+
+  Uint8List _imageToUint8(img.Image image) {
+    final buffer = Uint8List(inputSize * inputSize * 3);
+    int index = 0;
+    for (int y = 0; y < inputSize; y++) {
+      for (int x = 0; x < inputSize; x++) {
+        final p = image.getPixel(x, y);
+        buffer[index++] = p.r.toInt();
+        buffer[index++] = p.g.toInt();
+        buffer[index++] = p.b.toInt();
+      }
+    }
+    return buffer;
+  }
+
+  bool _isProbability(List<double> values) {
+    final sum = values.reduce((a, b) => a + b);
+    return sum > 0.99 && sum < 1.01;
   }
 
   List<double> _softmax(List<double> x) {
