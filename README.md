@@ -18,23 +18,17 @@ An AI-powered mobile application built with **Flutter** and **TensorFlow Lite** 
 
 ## 📱 Screenshots
 
-> Place the screenshots inside a `screenshots/` folder in the project root.
-
 ### 🏠 Home Screen
-
-![Home Screen](screenshots/home_screen.png)
+![Home Screen](assets/screenshots/home_screen.png)
 
 ### 📜 Scan History
-
-![Scan History](screenshots/scan_history.png)
+![Scan History](assets/screenshots/scan_history.png)
 
 ### 🧪 Disease Detection Result
-
-![Result Screen](screenshots/result_screen.png)
+![Result Screen](assets/screenshots/result_screen.png)
 
 ### ❌ Invalid Image Rejection
-
-![Invalid Image](screenshots/invalid_image.png)
+![Invalid Image](assets/screenshots/invalid_image.png)
 
 ---
 
