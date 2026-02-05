@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../services/model_service.dart';
 import '../services/scan_storage.dart';
-import '../core/utils/image_quality.dart';
 import '../core/models/scan_result.dart';
-import '../core/utils/image_validator.dart';
+import '../core/constants/app_strings.dart';
+import '../core/app_language.dart';
+
 import 'result_screen.dart';
 import 'camera_screen.dart';
 
@@ -30,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // Run prediction ONLY if image exists
     if (widget.imageFile != null) {
       _runPredictionFlow();
     }
@@ -43,124 +43,41 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final image = widget.imageFile!;
+      final File image = widget.imageFile!;
 
-      // 1️⃣ Validate image (file format, size, etc.)
-      ImageValidator.validate(image);
-
-      // 2️⃣ Blur check (image quality)
-      if (ImageQuality.isBlurred(image)) {
-        _showBlurDialog();
-        return;
-      }
-
-      // 3️⃣ Initialize ML model
-      await ModelService.init();
-
-      // 4️⃣ Predict with timeout
-      final prediction = await ModelService.classifier
-          .predict(image)
+      final ScanResult result = await ModelService.runPipeline(image)
           .timeout(const Duration(seconds: 8));
 
-      final String label = prediction['label'] as String;
-      final double confidence =
-      (prediction['confidence'] as num).toDouble();
-
-      // 5️⃣ ❗ CRITICAL FIX: Reject random / non-cardamom images
-      // Threshold intentionally kept high to block tables, cakes, landscapes, drawings
-      if (confidence < 0.75) {
+      if (result.isUncertain) {
         _showInvalidImageDialog();
         return;
       }
 
-      // 6️⃣ Save ONLY valid scans
-      await ScanStorage.saveScan(
-        ScanResult(
-          imagePath: image.path,
-          label: label,
-          confidence: confidence,
-          source: "Camera/Gallery",
-          timestamp: DateTime.now(),
-          isUncertain: false,
-        ),
-      );
+      await ScanStorage.saveScan(result);
 
       if (!mounted) return;
 
-      // 7️⃣ Navigate to result screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ResultScreen(
-            image: image,
-            label: label,
-            confidence: confidence,
-          ),
+          builder: (_) => ResultScreen(result: result),
         ),
       );
     } on TimeoutException {
-      _showError("Prediction timed out. Please try again.");
-    } catch (e, st) {
+      _showError("timeout");
+    } catch (e) {
       debugPrint("Prediction error: $e");
-      debugPrint("$st");
-      _showError("Prediction failed. Please try again.");
+      _showError("prediction_failed");
     }
-  }
-
-  // ================= BLUR IMAGE POPUP =================
-  void _showBlurDialog() {
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text("Image Not Clear"),
-        content: const Text(
-          "The leaf image appears blurry or unclear.\n\n"
-              "Please retake a clear photo or upload another image "
-              "for accurate disease detection.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CameraScreen(),
-                ),
-              );
-            },
-            child: const Text("Retake Capture"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CameraScreen(),
-                ),
-              );
-            },
-            child: const Text("Upload Leaf Image"),
-          ),
-        ],
-      ),
-    );
   }
 
   // ================= INVALID IMAGE POPUP =================
   void _showInvalidImageDialog() {
     if (!mounted) return;
 
+    final lang = appLanguage.value;
+    final strings = AppStrings.of(lang);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -168,12 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Text("Invalid Image"),
-        content: const Text(
-          "This image does not appear to be a cardamom leaf.\n\n"
-              "Please upload a clear image of a cardamom leaf "
-              "for accurate disease detection.",
-        ),
+        title: Text(strings.invalidImageTitle),
+        content: Text(strings.invalidImageMessage),
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -188,47 +101,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-            child: const Text("Upload Cardamom Leaf"),
+            child: Text(strings.uploadLeaf),
           ),
         ],
       ),
     );
   }
 
-  void _showError(String message) {
+  void _showError(String key) {
     if (!mounted) return;
     setState(() {
       _hasError = true;
-      _errorMessage = message;
+      _errorMessage = key;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // If no image → go to camera screen
     if (widget.imageFile == null) {
       return const CameraScreen();
     }
 
-    return Scaffold(
-      body: _hasError
-          ? _FallbackUI(
-        message: _errorMessage,
-        onRetry: _runPredictionFlow,
-      )
-          : const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text(
-              "Analyzing leaf image…",
-              style: TextStyle(fontWeight: FontWeight.w500),
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: appLanguage,
+      builder: (_, lang, __) {
+        final strings = AppStrings.of(lang);
+
+        return Scaffold(
+          body: _hasError
+              ? _FallbackUI(
+            message: strings.errorMessage(_errorMessage),
+            onRetry: _runPredictionFlow,
+          )
+              : Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(
+                  strings.analyzingImage,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -248,6 +167,9 @@ class _FallbackUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = appLanguage.value;
+    final strings = AppStrings.of(lang);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -262,9 +184,9 @@ class _FallbackUI extends StatelessWidget {
             );
           },
         ),
-        title: const Text(
-          "Analysis Failed",
-          style: TextStyle(
+        title: Text(
+          strings.analysisFailed,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -300,9 +222,9 @@ class _FallbackUI extends StatelessWidget {
                   ),
                 ),
                 onPressed: onRetry,
-                child: const Text(
-                  "Retry",
-                  style: TextStyle(
+                child: Text(
+                  strings.retry,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

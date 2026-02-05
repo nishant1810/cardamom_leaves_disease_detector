@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../core/app_language.dart';
+import '../core/constants/app_strings.dart';
 import 'history_screen.dart';
 import 'image_preview_screen.dart';
-
-enum AppLanguage { en, hi }
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -14,13 +15,11 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  AppLanguage _currentLang = AppLanguage.en;
   final ImagePicker _picker = ImagePicker();
 
   // ================= IMAGE PICK =================
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
-
     if (pickedFile != null && mounted) {
       Navigator.push(
         context,
@@ -32,262 +31,339 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  // ================= BOTTOM SHEET =================
-  void _showPickOptions() {
+  // ================= LANGUAGE SELECTOR =================
+  void _showLanguageSelector(BuildContext context, AppStrings strings) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: Text(
-                _currentLang == AppLanguage.en
-                    ? "Capture Leaf Image"
-                    : "पत्ते की फोटो लें",
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: Text(
-                _currentLang == AppLanguage.en
-                    ? "Upload from Gallery"
-                    : "गैलरी से अपलोड करें",
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================= TEXT =================
-  String get appBarTitle =>
-      _currentLang == AppLanguage.en
-          ? "Cardamom Leaf Disease Detection"
-          : "इलायची पत्ता रोग पहचान";
-
-  String get mainTitle =>
-      _currentLang == AppLanguage.en
-          ? "Start Leaf Disease Detection"
-          : "पत्ता रोग पहचान शुरू करें";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // ================= APP BAR =================
-      appBar: AppBar(
-        backgroundColor: Colors.green.shade700,
-        elevation: 2,
-        centerTitle: true,
-
-        // ===== TITLE =====
-        title: Text(
-          appBarTitle,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-          ),
-        ),
-
-        actions: [
-          // 🌐 LANGUAGE SWITCH
-          IconButton(
-            tooltip: _currentLang == AppLanguage.en
-                ? "Switch to Hindi"
-                : "अंग्रेज़ी में बदलें",
-            icon: const Icon(Icons.language),
-            onPressed: () {
-              setState(() {
-                _currentLang = _currentLang == AppLanguage.en
-                    ? AppLanguage.hi
-                    : AppLanguage.en;
-              });
-            },
-          ),
-
-          // 🕘 HISTORY
-          IconButton(
-            tooltip: _currentLang == AppLanguage.en
-                ? "Detection History"
-                : "पहचान इतिहास",
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const HistoryScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-
-      // ================= BODY =================
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "The New Era of",
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.brown.shade600,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    height: 34,
-                    width: 34,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFFDFF2DF),
-                    ),
-                    child: const Icon(
-                      Icons.eco,
-                      size: 20,
-                      color: Color(0xFF4CAF50),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    "AGRICULTURE",
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-              Text(
-                "AI-powered sustainable farming\nfor a better tomorrow",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.green.shade200,
-                  height: 1.4,
-                ),
-              ),
-
-              const SizedBox(height: 26),
-
-              // ===== IMAGE =====
-              Container(
-                height: 140,
-                width: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/cardamom_leaf.jpeg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Text(
-                mainTitle,
-                textAlign: TextAlign.center,
+                strings.selectLanguage,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // ===== PRIMARY ACTION BUTTONS =====
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.camera_alt),
-                label: Text(
-                  _currentLang == AppLanguage.en
-                      ? "Capture Leaf Image"
-                      : "पत्ते की फोटो लें",
-                ),
-                onPressed: () => _pickImage(ImageSource.camera),
-              ),
-
               const SizedBox(height: 12),
 
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+              _LanguageOption(
+                title: "English",
+                selected: appLanguage.value == AppLanguage.en,
+                onTap: () {
+                  appLanguage.value = AppLanguage.en;
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              _LanguageOption(
+                title: "മലയാളം",
+                selected: appLanguage.value == AppLanguage.ml,
+                onTap: () {
+                  appLanguage.value = AppLanguage.ml;
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              _LanguageOption(
+                title: "தமிழ்",
+                selected: appLanguage.value == AppLanguage.ta,
+                onTap: () {
+                  appLanguage.value = AppLanguage.ta;
+                  Navigator.pop(sheetContext);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ================= UI =================
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: appLanguage,
+      builder: (_, lang, __) {
+        final strings = AppStrings.of(lang);
+
+        return Scaffold(
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            backgroundColor: Colors.green.shade800,
+            centerTitle: true,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+
+            leading: Padding(
+              padding: const EdgeInsets.all(8),
+              child: CircleAvatar(
+                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.contain,
                 ),
-                icon: const Icon(Icons.photo_library),
-                label: Text(
-                  _currentLang == AppLanguage.en
-                      ? "Upload from Gallery"
-                      : "गैलरी से अपलोड करें",
+              ),
+            ),
+
+            title: Text(
+              strings.appName,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                color: Colors.white,
+              ),
+            ),
+
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.language),
+                tooltip: strings.changeLanguage,
+                onPressed: () =>
+                    _showLanguageSelector(context, strings),
+              ),
+              IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const HistoryScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/bg_image.png',
+                  fit: BoxFit.cover,
                 ),
-                onPressed: () => _pickImage(ImageSource.gallery),
+              ),
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.55),
+                ),
               ),
 
-              const SizedBox(height: 20),
+              SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 26,
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
 
-              Text(
-                "Accurate • Fast • AI-Based Detection",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade500,
+                      Text(
+                        strings.heroTitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // ===== DETECTABLE CLASSES =====
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade900
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.detectableTitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text("• ${strings.blight}",
+                                style: _diseaseStyle),
+                            Text("• ${strings.phyllosticta}",
+                                style: _diseaseStyle),
+                            Text("• ${strings.healthyLeaf}",
+                                style: _diseaseStyle),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // ===== GUIDELINES =====
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.black.withValues(alpha: 0.35),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.guidelinesTitle,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            _GuidelineTile(
+                              icon: Icons.wb_sunny,
+                              text: strings.guidelineNaturalLight,
+                            ),
+                            _GuidelineTile(
+                              icon: Icons.center_focus_strong,
+                              text: strings.guidelineFocus,
+                            ),
+                            _GuidelineTile(
+                              icon: Icons.block,
+                              text: strings.guidelineAvoidBlur,
+                            ),
+                            _GuidelineTile(
+                              icon: Icons.eco,
+                              text: strings.guidelineSingleLeaf,
+                            ),
+                            _GuidelineTile(
+                              icon: Icons.straighten,
+                              text: strings.guidelineDistance,
+                            ),
+                            _GuidelineTile(
+                              icon: Icons.water_drop_outlined,
+                              text: strings.guidelineDryLeaf,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade900,
+                          foregroundColor: Colors.white,
+                          minimumSize:
+                          const Size(double.infinity, 56),
+                        ),
+                        icon: const Icon(Icons.camera_alt),
+                        label: Text(strings.startDetection),
+                        onPressed: () =>
+                            _pickImage(ImageSource.camera),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side:
+                          const BorderSide(color: Colors.white),
+                          minimumSize:
+                          const Size(double.infinity, 48),
+                        ),
+                        icon:
+                        const Icon(Icons.photo_library),
+                        label:
+                        Text(strings.uploadFromGallery),
+                        onPressed: () =>
+                            _pickImage(ImageSource.gallery),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+}
 
-      // ================= FAB =================
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green.shade700,
-        tooltip: "More options",
-        onPressed: _showPickOptions,
-        child: const Icon(Icons.add),
+// ================= STYLES =================
+const _diseaseStyle = TextStyle(
+  fontSize: 18,
+  color: Colors.white,
+  fontWeight: FontWeight.w800,
+);
+
+// ================= GUIDELINE TILE =================
+class _GuidelineTile extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _GuidelineTile({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.greenAccent, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// ================= LANGUAGE OPTION TILE =================
+class _LanguageOption extends StatelessWidget {
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LanguageOption({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.check_circle : Icons.language,
+        color: selected ? Colors.green : Colors.grey,
+      ),
+      title: Text(title, style: const TextStyle(fontSize: 16)),
+      onTap: onTap,
     );
   }
 }

@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:cardamom_leaves_disease_detector/main.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('App loads without crashing', (WidgetTester tester) async {
-    // Build app
-    await tester.pumpWidget(const CardamomDiseaseApp());
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CardoDisDetectApp(),
+      ),
+    );
 
-    // Allow initial frames to render
+    // Wait for all animations/builds
     await tester.pumpAndSettle();
 
-    // Verify app title exists in AppBar
     expect(
       find.text('Cardamom Leaf Disease Detection'),
       findsOneWidget,

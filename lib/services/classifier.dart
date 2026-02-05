@@ -9,7 +9,7 @@ import 'package:image/image.dart' as img;
 class Classifier {
   static const int inputSize = 224;
   static const String modelPath =
-      'assets/models/cardamom_disease_model.tflite';
+      'assets/models/mobilenet_model.tflite';
   static const String labelsPath = 'assets/labels.txt';
 
   Interpreter? _interpreter;

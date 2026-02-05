@@ -1,24 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:cardamom_leaves_disease_detector/core/theme/app_theme.dart';
-import 'package:cardamom_leaves_disease_detector/screens/camera_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import 'core/app_language.dart';
+import 'screens/camera_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const CardamomDiseaseApp());
+  detectDeviceLanguage();
+  runApp(const CardoDisDetectApp());
 }
 
-class CardamomDiseaseApp extends StatelessWidget {
-  const CardamomDiseaseApp({super.key});
+class CardoDisDetectApp extends StatelessWidget {
+  const CardoDisDetectApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Cardamom Leaf Disease Detector',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      home: const CameraScreen(),
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: appLanguage,
+      builder: (_, lang, __) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          locale: Locale(
+            lang == AppLanguage.ml
+                ? 'ml'
+                : lang == AppLanguage.ta
+                ? 'ta'
+                : 'en',
+          ),
+          supportedLocales: const [
+            Locale('en'),
+            Locale('ml'),
+            Locale('ta'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const CameraScreen(),
+        );
+      },
     );
   }
 }
