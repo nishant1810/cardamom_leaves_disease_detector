@@ -2,14 +2,14 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-import '../services/model_service.dart';
-import '../services/scan_storage.dart';
-import '../core/models/scan_result.dart';
-import '../core/constants/app_strings.dart';
-import '../core/app_language.dart';
+import '../../services/model_service.dart';
+import '../../services/scan_storage.dart';
+import '../../core/models/scan_result.dart';
+import '../../core/localization/app_strings.dart';
+import '../../core/localization/app_language.dart';
 
-import 'result_screen.dart';
-import 'camera_screen.dart';
+import '../result/result_screen.dart';
+import '../camera/camera_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final File? imageFile;

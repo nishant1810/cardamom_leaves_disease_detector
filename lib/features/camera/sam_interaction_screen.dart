@@ -1,10 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
-
-import '../core/app_language.dart';
-import '../core/constants/app_strings.dart';
 
 class SamInteractionScreen extends StatefulWidget {
   final File imageFile;
@@ -15,8 +11,7 @@ class SamInteractionScreen extends StatefulWidget {
   });
 
   @override
-  State<SamInteractionScreen> createState() =>
-      _SamInteractionScreenState();
+  State<SamInteractionScreen> createState() => _SamInteractionScreenState();
 }
 
 class _SamInteractionScreenState extends State<SamInteractionScreen> {
@@ -36,24 +31,61 @@ class _SamInteractionScreenState extends State<SamInteractionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<AppLanguage>(
-      valueListenable: appLanguage,
-      builder: (_, lang, __) {
-        final strings = AppStrings.of(lang);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Leaf Segmentation (SAM)"),
+        backgroundColor: Colors.green.shade700,
+      ),
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(strings.leafSegmentation),
-            backgroundColor: Colors.green.shade700,
-          ),
-          body: Column(
-            children: [
-              Expanded(child: _buildImageArea()),
-              _buildControls(strings),
-            ],
-          ),
-        );
-      },
+      body: SafeArea(
+        bottom: true,
+        child: Column(
+          children: [
+            // ================= IMAGE AREA =================
+            Expanded(
+              child: _buildImageArea(),
+            ),
+
+            // ================= CONTROLS (SAFE) =================
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                12,
+                8,
+                12,
+                MediaQuery.of(context).padding.bottom + 12,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: const Text("Auto Segmentation"),
+                    value: autoSegmentation,
+                    onChanged: (v) {
+                      setState(() {
+                        autoSegmentation = v;
+                        tapPoint = null;
+                        boxStart = null;
+                        boxEnd = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _applySegmentation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      minimumSize:
+                      const Size(double.infinity, 48),
+                    ),
+                    child: const Text("Apply SAM Segmentation"),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -110,14 +142,14 @@ class _SamInteractionScreenState extends State<SamInteractionScreen> {
                   ),
                 ),
 
-              // 🟩 BOX
+              // 🟩 SELECTION BOX
               if (boxStart != null && boxEnd != null)
                 Positioned.fromRect(
                   rect: Rect.fromPoints(boxStart!, boxEnd!),
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.black,
+                        color: Colors.greenAccent,
                         width: 2,
                       ),
                     ),
@@ -127,37 +159,6 @@ class _SamInteractionScreenState extends State<SamInteractionScreen> {
           ),
         );
       },
-    );
-  }
-
-  // ================= CONTROLS =================
-  Widget _buildControls(AppStrings strings) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          SwitchListTile(
-            title: Text(strings.autoSegmentation),
-            value: autoSegmentation,
-            onChanged: (v) {
-              setState(() {
-                autoSegmentation = v;
-                tapPoint = null;
-                boxStart = null;
-                boxEnd = null;
-              });
-            },
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: _applySegmentation,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-            ),
-            child: Text(strings.applySegmentation),
-          ),
-        ],
-      ),
     );
   }
 
@@ -180,12 +181,8 @@ class _SamInteractionScreenState extends State<SamInteractionScreen> {
       return;
     }
 
-    final strings = AppStrings.of(appLanguage.value);
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(strings.selectRegionWarning),
-      ),
+      const SnackBar(content: Text("Please select a region")),
     );
   }
 
@@ -200,22 +197,17 @@ class _SamInteractionScreenState extends State<SamInteractionScreen> {
     final bottom =
     p2.dy.clamp(0, decodedImage.height.toDouble()).toInt();
 
-    final width = (right - left).abs().clamp(1, decodedImage.width);
-    final height =
-    (bottom - top).abs().clamp(1, decodedImage.height);
-
     final cropped = img.copyCrop(
       decodedImage,
       x: left,
       y: top,
-      width: width,
-      height: height,
+      width: (right - left).abs(),
+      height: (bottom - top).abs(),
     );
 
     final file = File(
       '${widget.imageFile.parent.path}/sam_crop_${DateTime.now().millisecondsSinceEpoch}.png',
     );
-
     file.writeAsBytesSync(img.encodePng(cropped));
     return file;
   }

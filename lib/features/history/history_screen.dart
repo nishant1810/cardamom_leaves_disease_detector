@@ -5,11 +5,11 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:open_file/open_file.dart';
 
-import '../core/app_language.dart';
-import '../core/constants/app_strings.dart';
-import '../services/scan_storage.dart';
-import '../core/models/scan_result.dart';
-import 'result_screen.dart';
+import '../../core/localization/app_language.dart';
+import '../../core/localization/app_strings.dart';
+import '../../services/scan_storage.dart';
+import '../../core/models/scan_result.dart';
+import '../result/result_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

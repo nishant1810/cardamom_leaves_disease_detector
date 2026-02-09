@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'camera_screen.dart';
-import 'history_screen.dart';
+import '../camera/camera_screen.dart';
+import '../history/history_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});

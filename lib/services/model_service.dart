@@ -6,7 +6,7 @@ import '../core/utils/image_quality.dart';
 import '../core/utils/image_validator.dart';
 import '../core/utils/image_resize.dart';
 import '../core/utils/leaf_validator.dart';
-import 'tflite_service.dart';
+import 'ml/tflite_service.dart';
 
 class ModelService {
   /// ================= FULL PIPELINE =================

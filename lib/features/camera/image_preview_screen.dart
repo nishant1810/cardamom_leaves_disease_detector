@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-import '../core/app_language.dart';
-import '../core/constants/app_strings.dart';
-import '../core/models/scan_result.dart';
-import '../services/model_service.dart';
-import 'result_screen.dart';
+import '../../core/localization/app_language.dart';
+import '../../core/localization/app_strings.dart';
+import '../../core/models/scan_result.dart';
+import '../../services/model_service.dart';
+import '../result/result_screen.dart';
 import 'sam_interaction_screen.dart';
 
 class ImagePreviewScreen extends StatefulWidget {

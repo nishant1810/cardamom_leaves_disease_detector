@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../core/models/sam_prompt.dart';
+import '../../core/models/sam_prompt.dart';
 
 class SamService {
 
