@@ -46,26 +46,48 @@ An AI-powered mobile application built with **Flutter** and **TensorFlow Lite** 
 
 ```
 lib/
-├── screens/
-│   ├── camera_screen.dart
-│   ├── home_screen.dart
-│   ├── history_screen.dart
-│   ├── image_preview_screen.dart
-│   └── result_screen.dart
-├── services/
-│   ├── classifier.dart
-│   └── scan_storage.dart
 ├── core/
-|   ├── constanst/ 
-│   ├     └── strings.dart
+|   ├── localization/
+|   |     ├── app_strings.dart
+│   |     └── app_language.dart
 │   ├── models/
+|   |     ├── sam_prompt.dart
 │   ├     └── scan_result.dart
 │   └── utils/
+|        ├── image_cropper.dart
 │        ├── image_quality.dart
+|        ├── image_resize.dart
+|        ├── leaf_validator.dart
 │        └── image_validatior.dart
+├── Features/
+│     ├── camera
+|     |      ├── camera_screnn.dart
+|     |      ├── full_image_viewer.dart
+|     |      ├── image_preview_screen.dart
+|     |      └── sam_interaction_screen.dart
+│     ├── history
+|     |       └── history.dart
+│     ├── navigation
+|     |      ├── home_screen.dart
+|     |      └── main_navigation.dart
+│     └── result
+|             └── result.dart
+├── services/
+│      ├── ml
+|      |     ├── classifier.dart
+|      |     ├── inference_isolate.dart
+|      |     ├── sam_service.dart
+|      |     └── tflite_service.dart
+|      ├── model_service.dart
+|      ├── prediction_cache.dart
+│      └── scan_storage.dart
 ├── widgets/
-│   ├── confidence_bar.dart
-│   └── loading_overlay.dart
+|   ├── agri_helpine_button.dart
+|   ├── confidence_bar.dart
+|   ├── guideline_tflite.dart
+|   ├── language_option_tile.dart
+│   ├── loading_overlay.dart
+│   └── weather_warning_card.dart
 └── main.dart
 ```
 
